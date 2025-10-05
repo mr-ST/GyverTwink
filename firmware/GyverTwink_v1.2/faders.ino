@@ -1,3 +1,4 @@
+#define BRIGHTNESS 100
 void fader(CRGB color) {
   static uint32_t tmr;
   static int val = 0;
@@ -7,19 +8,18 @@ void fader(CRGB color) {
     val += dir ? 3 : -3;
     val = constrain(val, 5, 120);
     if (val >= 120 || val <= 5) dir = !dir;
-    strip->showColor(color, val);
+    strip->showColor(color, val, BRIGHTNESS);
   }
 }
 
 void fadeBlink(CRGB color) {
   for (int i = 0; i < 200; i += 20) {
-    strip->showColor(color, i);
+    strip->showColor(color, i, BRIGHTNESS);
     delay(20);
   }
   for (int i = 200; i > 0; i -= 20) {
-    strip->showColor(color, i);
+    strip->showColor(color, i, BRIGHTNESS);
     delay(20);
   }
-  strip->clearLedData();
-  strip->showLeds(0);
+  strip->clearLeds();
 }

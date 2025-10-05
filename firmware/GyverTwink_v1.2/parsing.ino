@@ -94,8 +94,7 @@ void parsing() {
           case 0:   // запуск калибровки
             DEBUGLN("Calibration start");
             calibF = true;
-            strip->clearLedData();
-            strip->showLeds(0);
+            strip->clearLeds();
             break;
 
           case 1:   // следующий лед
@@ -105,7 +104,7 @@ void parsing() {
                 xy[curLed - 1][0] = ubuf[6];
                 xy[curLed - 1][1] = ubuf[7];
               }
-              strip->clearLedData();
+              strip->clearLeds();
               leds[curLed] = CRGB::White;
               strip->showLeds(200);
             }
@@ -114,8 +113,7 @@ void parsing() {
           case 2:   // калибровка окончена
             DEBUGLN("Finished");
             calibF = false;
-            strip->clearLedData();
-            strip->showLeds(0);
+            strip->clearLeds();
             EExy.updateNow();
 
             mm.minY = 255;

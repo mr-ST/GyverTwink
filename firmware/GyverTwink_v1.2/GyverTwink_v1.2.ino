@@ -21,10 +21,11 @@
 
 // ================ НАСТРОЙКИ ================
 
-#define BTN_PIN D3      // пин кнопки - для esp32 прописываем пин 21
+#define BTN_PIN 21      // пин кнопки - для esp32 прописываем пин 21
+#define EB_TICK 100
 #define BTN_TOUCH 0     // 1 - сенсорная кнопка, 0 - нет
 
-#define LED_PIN D1      // пин ленты - для esp32 прописываем пин 19
+#define LED_PIN 17      // пин ленты - для esp32 прописываем пин 19
 #define LED_TYPE WS2812 // чип ленты
 #define LED_ORDER GRB   // порядок цветов ленты
 #define LED_MAX 500     // макс. светодиодов
@@ -54,7 +55,7 @@ WiFiUDP udp;
 EEManager EEwifi(portalCfg);
 CRGB leds[LED_MAX];
 CLEDController *strip;
-EncButton<EB_TICK, BTN_PIN> btn;
+Button btn(BTN_PIN);
 IPAddress myIP;
 
 // ================== EEPROM BLOCKS ==================
@@ -117,7 +118,9 @@ void setup() {
   DEBUGLN();
 #endif
   delay(200);
-  if (BTN_TOUCH) btn.setButtonLevel(HIGH);
+#if defined(BTN_TOUCH) && BTN_TOUCH != 0
+  btn.setButtonLevel(HIGH);
+#endif
   startStrip();
   EEPROM.begin(2048); // с запасом!
 

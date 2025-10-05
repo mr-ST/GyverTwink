@@ -16,7 +16,7 @@ void portalRoutine() {
 void startStrip() {
   strip = &FastLED.addLeds<LED_TYPE, LED_PIN, LED_ORDER>(leds, LED_MAX).setCorrection(TypicalLEDStrip);
   strip->setLeds(leds, LED_MAX);
-  strip->clearLedData();
+  strip->clearLeds();
   // выводим ргб
   leds[0] = CRGB::Red;
   leds[1] = CRGB::Green;
@@ -28,7 +28,7 @@ bool checkButton() {
   uint32_t tmr = millis();
   while (millis() - tmr < 2000) {
     btn.tick();
-    if (btn.state()) return true;
+    if (btn.read()) return true;
   }
   return false;
 }
