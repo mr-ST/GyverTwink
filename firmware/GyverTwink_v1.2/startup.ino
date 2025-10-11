@@ -1,7 +1,8 @@
 void portalRoutine() {
   // запускаем portal
-  portalStart();
   DEBUGLN("Portal start");
+  portalStart();
+  DEBUGLN("Portal started");
 
   // ждём действий пользователя, мигаем
   while (!portalTick()) fader(CRGB::Blue);
@@ -14,21 +15,27 @@ void portalRoutine() {
 }
 
 void startStrip() {
+  DEBUGLN("+++startStrip");
   strip = &FastLED.addLeds<LED_TYPE, LED_PIN, LED_ORDER>(leds, LED_MAX).setCorrection(TypicalLEDStrip);
   strip->setLeds(leds, LED_MAX);
+  DEBUGLN("clearLeds");
   strip->clearLeds();
   // выводим ргб
   leds[0] = CRGB::Red;
   leds[1] = CRGB::Green;
   leds[2] = CRGB::Blue;
   strip->showLeds(50);
+  DEBUGLN("---startStrip");
 }
 
 bool checkButton() {
   uint32_t tmr = millis();
   while (millis() - tmr < 2000) {
     btn.tick();
-    if (btn.read()) return true;
+    if (btn.read()) {
+      DEBUGLN("BTN ON");
+      return true;
+    }
   }
   return false;
 }

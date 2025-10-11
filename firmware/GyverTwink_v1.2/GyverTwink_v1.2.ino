@@ -21,18 +21,18 @@
 
 // ================ НАСТРОЙКИ ================
 
-#define BTN_PIN 21      // пин кнопки - для esp32 прописываем пин 21
+#define BTN_PIN 9      // пин кнопки - для esp32 прописываем пин 21
 #define EB_TICK 100
 #define BTN_TOUCH 0     // 1 - сенсорная кнопка, 0 - нет
 
-#define LED_PIN 17      // пин ленты - для esp32 прописываем пин 19
+#define LED_PIN 19 //17      // пин ленты - для esp32 прописываем пин 19
 #define LED_TYPE WS2812 // чип ленты
 #define LED_ORDER GRB   // порядок цветов ленты
-#define LED_MAX 500     // макс. светодиодов
+#define LED_MAX 200     // макс. светодиодов
 
 // имя точки в режиме AP
-#define GT_AP_SSID "GyverTwink"
-#define GT_AP_PASS "12345678"
+#define GT_AP_SSID "garland"
+#define GT_AP_PASS "12345678!"
 //#define DEBUG_SERIAL_GT   // раскомментируй, чтобы включить отладку
 
 // ================== LIBS ==================
@@ -60,7 +60,7 @@ IPAddress myIP;
 
 // ================== EEPROM BLOCKS ==================
 struct Cfg {
-  uint16_t ledAm = 50;
+  uint16_t ledAm = LED_MAX;
   bool power = 1;
   byte bright = 100;
   bool autoCh = 0;
@@ -103,6 +103,8 @@ bool calibF = false;
 byte curEff = 0;
 byte forceEff = 0;
 
+#define DEBUG_SERIAL_GT
+
 #ifdef DEBUG_SERIAL_GT
 #define DEBUGLN(x) Serial.println(x)
 #define DEBUG(x) Serial.print(x)
@@ -115,14 +117,17 @@ byte forceEff = 0;
 void setup() {
 #ifdef DEBUG_SERIAL_GT
   Serial.begin(115200);
-  DEBUGLN();
+  DEBUGLN("setup");
 #endif
   delay(200);
 #if defined(BTN_TOUCH) && BTN_TOUCH != 0
   btn.setButtonLevel(HIGH);
 #endif
+
   startStrip();
   EEPROM.begin(2048); // с запасом!
+  DEBUGLN("EEPROM.writeByte(0, 0); ");
+  EEPROM.writeByte(0, 0); 
 
   // если это первый запуск или щелчок по кнопке, открываем портал
   if (EEwifi.begin(0, 'a') || checkButton()) portalRoutine();
