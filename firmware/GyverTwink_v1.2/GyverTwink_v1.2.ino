@@ -57,7 +57,9 @@ CRGB leds[LED_MAX];
 CLEDController *strip;
 Button btn(BTN_PIN);
 IPAddress myIP;
-
+#define STRIP_CENTER 103
+#define STRIP_START 0
+#define STRIP_END (LED_MAX - 1)
 // ================== EEPROM BLOCKS ==================
 struct Cfg {
   uint16_t ledAm = LED_MAX;
@@ -126,12 +128,11 @@ void setup() {
 
   startStrip();
   EEPROM.begin(2048); // с запасом!
-  DEBUGLN("EEPROM.writeByte(0, 0); ");
-  EEPROM.writeByte(0, 0); 
 
   // если это первый запуск или щелчок по кнопке, открываем портал
   if (EEwifi.begin(0, 'a') || checkButton()) portalRoutine();
 
+  strip->setLeds(leds, LED_MAX);
   // создаём точку или подключаемся к AP
   if (portalCfg.mode == WIFI_AP || (portalCfg.mode == WIFI_STA && portalCfg.SSID[0] == '\0')) setupAP();
   else setupSTA();
@@ -142,11 +143,13 @@ void setup() {
   EEmm.begin(EEeff.nextAddr(), (uint8_t)LED_MAX);
   EExy.begin(EEmm.nextAddr(), (uint8_t)LED_MAX);
 
+  cfg.ledAm = LED_MAX;
   switchTmr.setPrd(cfg.prdCh * 60000ul);
   if (cfg.autoCh) switchTmr.restart();
+  strip->setLeds(leds, LED_MAX);
   switchEff();
   cfg.turnOff = false;
-  strip->setLeds(leds, cfg.ledAm);
+  strip->setLeds(leds, LED_MAX);
   udp.begin(8888);
 }
 
@@ -180,5 +183,7 @@ void loop() {
   }
 
   // показываем эффект, если включены
-  if (!calibF && cfg.power) effects();
+  if (!calibF && cfg.power) {
+    effects();
+  }
 }

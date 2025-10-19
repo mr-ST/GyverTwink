@@ -19,16 +19,21 @@ void parsing() {
     tmr = millis();
     int n = udp.read(ubuf, MAX_UDP_PACKET);
     ubuf[n] = 0;
-    if (ubuf[0] != 'G' || ubuf[1] != 'T') return;
-    /*for (int i = 2; i < n; i++) {
+    for (int i = 0; i < n; i++) {
       DEBUG(ubuf[i]);
       DEBUG(',');
-      }
-      DEBUGLN();*/
+    }
+    DEBUGLN();
+    if (ubuf[0] != 'G' || ubuf[1] != 'T') {
+      DEBUGLN("invalid UDP");
+      return;
+    }
+    DEBUGLN();
     byte answ[10];
 
     switch (ubuf[2]) {
       case 0:   // запрос IP
+        DEBUGLN("IP request");
         delay(myIP[3] * 2);
         answ[0] = 0;
         answ[1] = myIP[3];
@@ -36,6 +41,7 @@ void parsing() {
         break;
 
       case 1:   // запрос настроек
+        DEBUGLN("CFG request");
         answ[0] = 1;
         answ[1] = cfg.ledAm / 100;
         answ[2] = cfg.ledAm % 100;
@@ -50,6 +56,7 @@ void parsing() {
         break;
 
       case 2:   // приём настроек
+        DEBUGLN("CFG reception");
         forceTmr.stop();
         switch (ubuf[3]) {
           case 0: cfg.ledAm = ubuf[4] * 100 + ubuf[5];
@@ -134,6 +141,7 @@ void parsing() {
         break;
 
       case 4:   // управление эффектами
+      DEBUGLN("EFFECT control");
         forceTmr.restart();
         EEeff.update();
         switch (ubuf[3]) {
