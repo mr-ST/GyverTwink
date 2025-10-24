@@ -98,7 +98,7 @@ Effects effs[ACTIVE_PALETTES * 2];
 EEManager EEeff(effs);
 
 // ================== MISC DATA ==================
-Timer forceTmr(30000, false);
+Timer forceTmr(10000, false);
 Timer switchTmr(0, false);
 Timer offTmr(60000, false);
 bool calibF = false;
@@ -144,7 +144,7 @@ void setup() {
   EExy.begin(EEmm.nextAddr(), (uint8_t)LED_MAX);
 
   cfg.ledAm = LED_MAX;
-  switchTmr.setPrd(cfg.prdCh * 60000ul);
+  switchTmr.setPrd(cfg.prdCh * 50000ul);
   if (cfg.autoCh) switchTmr.restart();
   strip->setLeds(leds, LED_MAX);
   switchEff();
