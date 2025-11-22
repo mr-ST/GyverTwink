@@ -1,15 +1,20 @@
 
 #define EFF_CANDLE 0
-#define EFF_NO_FLAG 1
+#define EFF_AURORA 1
 #define EFF_RISING_WAVES 2
 #define EFF_TWINKLE 3
 #define EFF_SNOW_FALL 4
 #define EFF_WRW 5
 #define EFF_RAINBOW 6
 #define EFF_CANDY_CANE 7
+#define EFF_NO_FLAG 8
+#define EFF_CHASING_LIGHTS 9
+#define EFF_SNAKE 10
+#define EFF_SNAKE1 11
+#define EFF_HEART 12
 
 #define EFF_FIRST EFF_CANDLE
-#define EFF_COUNT 8
+#define EFF_COUNT 13
 
 // Вспомогательная функция для получения позиции по высоте (0-100)
 // учитывая что лента идет вверх, потом вниз
@@ -88,6 +93,21 @@ void effects() {
         break;
       case EFF_NO_FLAG:
         norwegianFlagEffect();
+        break;
+      case EFF_CHASING_LIGHTS:
+        chasingLights();
+        break;
+      case EFF_SNAKE:
+        snake();
+        break;
+      case EFF_SNAKE1:
+        snake1();
+        break;
+      case EFF_HEART:
+        breathingHeart();
+        break;
+      case EFF_AURORA:
+        aurora();
         break;
         
       default:
@@ -499,4 +519,198 @@ void norwegianFlagEffect() {
   
   strip->showLeds(cfg.bright);
   delay(20);
+}
+
+// 8. Бегущие огни по спирали
+void chasingLights() {
+  static uint32_t position = 0;
+  static Timer timer(50);
+  if (!timer.ready()) return;
+
+  fadeToBlackBy(leds, LED_MAX, 50);
+  
+  // Три цветных точки бегут по спирали
+  CRGB colors[] = {CRGB::Red, CRGB::Gold, CRGB::Green};
+  
+  for (uint8_t i = 0; i < 3; i++) {
+    uint32_t pos = (position + i * 66) % LED_MAX;
+    leds[pos] = colors[i];
+    // Хвост
+    if (pos > 0) leds[pos - 1] = colors[i];
+    if (pos > 1) leds[pos - 2] = colors[i];
+  }
+  
+  position++;
+  strip->showLeds(cfg.bright);
+}
+
+// 9. Змейка - огоньки бегут от начала до конца ленты
+void snake() {
+  static uint32_t position = 0; // используем uint16_t для больших значений
+  static const uint8_t SNAKE_COUNT = 2; // количество змеек
+  static const uint8_t SNAKE_LENGTH = 30; // длина хвоста каждой змейки
+  static Timer timer(20);
+  if (!timer.ready()) return;
+
+  fadeToBlackBy(leds, LED_MAX, 80);
+  
+  // Цвета для змеек
+  CRGB colors[] = {CRGB::Red, /*CRGB::Blue,*/ CRGB::Yellow4};
+  
+  for (uint8_t s = 0; s < SNAKE_COUNT; s++) {
+    // Позиция головы змейки с отступом между змейками
+    uint32_t headPos = (position + s * (LED_MAX / SNAKE_COUNT)) % LED_MAX;
+    
+    // Рисуем змейку с затухающим хвостом
+    for (uint8_t j = 0; j < SNAKE_LENGTH; j++) {
+      // Правильное вычисление позиции хвоста с учетом переполнения
+      int pos;
+      if (headPos >= j) {
+        pos = headPos - j;
+      } else {
+        pos = LED_MAX - (j - headPos);
+      }
+      
+      uint8_t brightness = 255 - (j * 255 / SNAKE_LENGTH);
+      leds[pos] = colors[s];
+      leds[pos].fadeToBlackBy(255 - brightness);
+    }
+  }
+  
+  position++;
+  if (position >= LED_MAX * 100) position = 0; // сброс для избежания переполнения
+  
+  strip->showLeds(cfg.bright);
+}
+
+void snake1() {
+  static uint32_t position = 0; // используем uint16_t для больших значений
+  static const uint8_t SNAKE_COUNT = 1; // количество змеек
+  static const uint8_t SNAKE_LENGTH = 100; // длина хвоста каждой змейки
+  static Timer timer(40);
+  if (!timer.ready()) return;
+
+  fadeToBlackBy(leds, LED_MAX, 80);
+  
+  // Цвета для змеек
+  CRGB colors[] = {CRGB::LawnGreen, /*CRGB::Blue,*/ CRGB::Yellow4};
+  
+  for (uint8_t s = 0; s < SNAKE_COUNT; s++) {
+    // Позиция головы змейки с отступом между змейками
+    uint32_t headPos = (position + s * (LED_MAX / SNAKE_COUNT)) % LED_MAX;
+    
+    // Рисуем змейку с затухающим хвостом
+    for (uint8_t j = 0; j < SNAKE_LENGTH; j++) {
+      // Правильное вычисление позиции хвоста с учетом переполнения
+      int pos;
+      if (headPos >= j) {
+        pos = headPos - j;
+      } else {
+        pos = LED_MAX - (j - headPos);
+      }
+      
+      uint8_t brightness = 255 - (j * 255 / SNAKE_LENGTH);
+      leds[pos] = colors[s];
+      leds[pos].fadeToBlackBy(255 - brightness);
+    }
+  }
+  
+  position++;
+  if (position >= LED_MAX * 100) position = 0; // сброс для избежания переполнения
+  
+  strip->showLeds(cfg.bright);
+}
+
+// 10. Пульсирующее сердце - ёлка "дышит" светом
+void breathingHeart() {
+  static uint8_t phase = 0;
+  static uint8_t colorMode = 0; // 0 = красный, 1 = зелёный
+  static uint32_t lastColorChange = 0;
+  static Timer timer(30);
+  if (!timer.ready()) return;
+
+  // Меняем цвет каждые 10 секунд
+  if (millis() - lastColorChange > 20000) {
+    colorMode = 1 - colorMode;
+    lastColorChange = millis();
+  }
+  
+  // Базовая яркость с использованием синуса для плавной пульсации
+  uint8_t baseBrightness = sin8(phase);
+  
+  for (int i = 0; i < LED_MAX; i++) {
+    int height = getHeightPos(i);
+    
+    // Градиент от основания к вершине (вершина ярче)
+    uint8_t heightFactor = map(height, 0, 79, 80, 255);
+    uint8_t brightness = scale8(baseBrightness, heightFactor);
+    
+    // Минимальная яркость для видимости
+    brightness = map(brightness, 0, 255, 1, 255);
+    
+    if (colorMode == 0) {
+      // Красное пульсирующее сердце
+      leds[i] = CRGB(brightness, 0, 0);
+    } else {
+      // Зелёное пульсирующее сердце
+      leds[i] = CRGB(0, brightness, 0);
+    }
+  }
+  
+  phase += 2; // скорость пульсации
+  
+  strip->showLeds(cfg.bright);
+}
+
+///////////////////////////// aurora
+float t = 0;
+float speed = 0.025;
+float scale = 0.018;
+#define SPIRAL_LEN  100
+
+inline int LED1(int i) { return i; }
+inline int LED2(int i) { return i + SPIRAL_LEN; }
+
+// Генерация северного сияния
+CRGB aurora(float pos, float t, float phaseShift) {
+
+  // Цвет — область “сияния”: зелёный → бирюза → синий → фиолетовый
+  //uint8_t hue = 100 + sin(pos * 2.7 + t * 0.9 + phaseShift) * 50;
+  uint8_t hue = 130 + sin(pos * 3 + t * 0.7 + phaseShift) * 15;
+
+  // Насыщенность почти максимальная (важно для исключения белого)
+  uint8_t sat = 240;
+
+  // Яркость колеблется шумом — именно это даёт "живость"
+  uint8_t val = inoise8(pos * 90 + phaseShift * 1200, t * 140);
+
+  return CHSV(hue, sat, val);
+}
+
+void aurora() {
+  static Timer timer(10);
+  if (!timer.ready()) return;
+
+  t += speed;
+
+  for (int i = 0; i < SPIRAL_LEN; i++) {
+
+    float pos = i * scale;
+
+    // “Дыхание” волны
+    float wave = sin(pos * 5.0 + t * 1.7) * 0.5 + 0.5;
+    uint8_t fade = (1.0 - wave) * 110;
+
+    // ------- Спираль 1 -------
+    CRGB c1 = aurora(pos, t, 0.0);
+    c1.fadeToBlackBy(fade);
+    leds[LED1(i)] = c1;
+
+    // ------- Спираль 2 (цветовой сдвиг) -------
+    CRGB c2 = aurora(pos, t, 2.4);
+    c2.fadeToBlackBy(fade);
+    leds[LED2(i)] = c2;
+  }
+
+  strip->showLeds(cfg.bright);
 }
