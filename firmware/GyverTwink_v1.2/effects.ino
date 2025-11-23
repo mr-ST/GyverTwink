@@ -1,6 +1,6 @@
 
 #define EFF_CANDLE 0
-#define EFF_AURORA 1
+#define EFF_FALLING_STARS 1
 #define EFF_RISING_WAVES 2
 #define EFF_TWINKLE 3
 #define EFF_SNOW_FALL 4
@@ -12,9 +12,11 @@
 #define EFF_SNAKE 10
 #define EFF_SNAKE1 11
 #define EFF_HEART 12
+#define EFF_AURORA 13
+#define EFF_FADE_IN_OUT 14
 
 #define EFF_FIRST EFF_CANDLE
-#define EFF_COUNT 13
+#define EFF_COUNT 15
 
 // Вспомогательная функция для получения позиции по высоте (0-100)
 // учитывая что лента идет вверх, потом вниз
@@ -108,6 +110,12 @@ void effects() {
         break;
       case EFF_AURORA:
         aurora();
+        break;
+      case EFF_FADE_IN_OUT:
+        evenOddPulse();
+        break;
+      case EFF_FALLING_STARS:
+        fallingStars();
         break;
         
       default:
@@ -714,3 +722,141 @@ void aurora() {
 
   strip->showLeds(cfg.bright);
 }
+
+// 11. Чётные и нечётные - противофазная пульсация
+void evenOddPulse() {
+  static uint8_t phase = 0;
+  
+  static Timer timer(40);
+  if (!timer.ready()) return;
+
+  // Яркость для чётных диодов (прямая фаза)
+  uint8_t evenBrightness = sin8(phase);
+  // Яркость для нечётных диодов (противоположная фаза)
+  uint8_t oddBrightness = sin8(phase + 128); // сдвиг на 180 градусов
+  
+  // Минимальная яркость для видимости
+  evenBrightness = map(evenBrightness, 0, 255, 1, 255);
+  oddBrightness = map(oddBrightness, 0, 255, 1, 255);
+  
+  for (int i = 0; i < LED_MAX; i++) {
+    if (i % 2 == 0) {
+      // Чётные диоды - фиолетовый цвет
+      leds[i] = CRGB(evenBrightness, 0, evenBrightness);
+    } else {
+      // Нечётные диоды - белый цвет
+      leds[i] = CRGB(oddBrightness, oddBrightness, oddBrightness);
+    }
+  }
+  
+  phase += 1; // скорость пульсации
+  
+  strip->showLeds(cfg.bright);
+}
+
+// 12. Падающие звёзды - звёзды падают и накапливаются снизу
+void fallingStars() {
+  static uint8_t filledHeight = 0; // до какой высоты заполнено (в звёздах)
+  static uint8_t fallingStarPos = 99; // текущая позиция падающей звезды
+  static CRGB fallingStarColor = CRGB::Red; // цвет падающей звезды
+  static bool starFalling = false; // падает ли звезда сейчас
+  static uint32_t lastUpdate = 0;
+  static CRGB stackColors[34]; // цвета накопленных звёзд (100/3 = ~33 звезды)
+  static bool initialized = false;
+  
+  static Timer timer(10);
+  if (!timer.ready()) return;
+
+  // Инициализация
+  if (!initialized) {
+    for (int i = 0; i < 34; i++) {
+      stackColors[i] = CRGB::Black;
+    }
+    initialized = true;
+  }
+  
+  // Проверка на полное заполнение - сброс
+  if (filledHeight >= 33) {
+    filledHeight = 0;
+    for (int i = 0; i < 34; i++) {
+      stackColors[i] = CRGB::Black;
+    }
+    fill_solid(leds, LED_MAX, CRGB::Black);
+    //delay(500); // пауза перед новым циклом
+  }
+  
+  // Запуск новой звезды если нет падающей
+  if (!starFalling) {
+    starFalling = true;
+    fallingStarPos = 99;
+    // Случайный цвет
+    uint8_t colorChoice = random8(6);
+    switch(colorChoice) {
+      case 0: fallingStarColor = CRGB::Red; break;
+      case 1: fallingStarColor = CRGB::Gold; break;
+      case 2: fallingStarColor = CRGB::Blue; break;
+      case 3: fallingStarColor = CRGB::White; break;
+      case 4: fallingStarColor = CRGB::Green; break;
+      case 5: fallingStarColor = CRGB(255, 0, 255); break; // фиолетовый
+    }
+  }
+  
+  // Обновление позиции каждые 60мс
+  if (millis() - lastUpdate > 10) {
+    lastUpdate = millis();
+    
+    if (starFalling) {
+      // Движение звезды вниз
+      uint8_t stopPosition = filledHeight * 3; // каждая звезда занимает 3 диода
+      if (fallingStarPos > stopPosition + 2) {
+        fallingStarPos--;
+      } else {
+        // Звезда остановилась - добавляем в стек
+        stackColors[filledHeight] = fallingStarColor;
+        filledHeight++;
+        starFalling = false;
+      }
+    }
+  }
+  
+  // Отрисовка
+  fill_solid(leds, LED_MAX, CRGB::Black);
+  
+  // Рисуем накопленные звёзды на обеих спиралях (каждая звезда = 3 диода)
+  for (uint8_t s = 0; s < filledHeight; s++) {
+    uint8_t basePos = s * 3;
+    // Первая спираль (0-99)
+    for (uint8_t i = 0; i < 3; i++) {
+      if (basePos + i < 100) {
+        leds[basePos + i] = stackColors[s];
+      }
+    }
+    // Вторая спираль (100-199), зеркально
+    for (uint8_t i = 0; i < 3; i++) {
+      if (basePos + i < 100) {
+        leds[199 - (basePos + i)] = stackColors[s];
+      }
+    }
+  }
+  
+  // Рисуем падающую звезду (3 точки)
+  if (starFalling) {
+    // Первая спираль
+    for (uint8_t i = 0; i < 3; i++) {
+      if (fallingStarPos >= i && fallingStarPos - i < 100) {
+        leds[fallingStarPos - i] = fallingStarColor;
+      }
+    }
+    
+    // Вторая спираль
+    for (uint8_t i = 0; i < 3; i++) {
+      uint8_t secondPos = 199 - (fallingStarPos - i);
+      if (secondPos < LED_MAX && fallingStarPos >= i) {
+        leds[secondPos] = fallingStarColor;
+      }
+    }
+  }
+  
+  strip->showLeds(cfg.bright);
+}
+
