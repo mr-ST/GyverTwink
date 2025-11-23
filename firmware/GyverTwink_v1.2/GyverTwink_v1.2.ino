@@ -144,7 +144,7 @@ void setup() {
   EExy.begin(EEmm.nextAddr(), (uint8_t)LED_MAX);
 
   cfg.ledAm = LED_MAX;
-  switchTmr.setPrd(cfg.prdCh * 70000ul);
+  switchTmr.setPrd(cfg.prdCh * 60000ul);
   if (cfg.autoCh) switchTmr.restart();
   strip->setLeds(leds, LED_MAX);
   switchEff();

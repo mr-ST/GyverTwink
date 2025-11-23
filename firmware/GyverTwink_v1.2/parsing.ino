@@ -59,37 +59,60 @@ void parsing() {
         DEBUGLN("CFG reception");
         forceTmr.stop();
         switch (ubuf[3]) {
-          case 0: cfg.ledAm = ubuf[4] * 100 + ubuf[5];
+          case 0:
+            cfg.ledAm = ubuf[4] * 100 + ubuf[5];
             strip->setLeds(leds, cfg.ledAm);
+            DEBUG("\t set led count ");
+            DEBUGLN(cfg.ledAm);
             break;
-          case 1: cfg.power = ubuf[4];
+          case 1: 
+            cfg.power = ubuf[4];
+            DEBUG("\t power ");
+            DEBUGLN(cfg.power);
             break;
-          case 2: cfg.bright = ubuf[4];
+          case 2: 
+            cfg.bright = ubuf[4];
+            DEBUG("\t brightness ");
+            DEBUGLN(cfg.bright);
             break;
-          case 3: cfg.autoCh = ubuf[4];
+          case 3: 
+            cfg.autoCh = ubuf[4];
             if (cfg.autoCh) switchTmr.restart();
             else switchTmr.stop();
+            DEBUG("\t auto mode ");
+            DEBUGLN(cfg.autoCh);
             break;
-          case 4: cfg.rndCh = ubuf[4];
+          case 4: 
+            cfg.rndCh = ubuf[4];
+            DEBUG("\t random effect ");
+            DEBUGLN(cfg.rndCh);
             break;
-          case 5: cfg.prdCh = ubuf[4];
+          case 5: 
+            cfg.prdCh = ubuf[4];
             switchTmr.setPrd(cfg.prdCh * 60000ul);
             if (cfg.autoCh) switchTmr.restart();
+            DEBUG("\t effect time minute:  ");
+            DEBUGLN(cfg.prdCh);
             break;
           case 6:   // нехт эффект
             switchEff();
             if (cfg.autoCh) switchTmr.restart();
+            DEBUGLN("\t next effect");
             return;
-            break;
+
           case 7:
             cfg.turnOff = ubuf[4];
             if (cfg.turnOff) offTmr.restart();
             else offTmr.stop();
+            DEBUG("\t turn off:  ");
+            DEBUGLN(cfg.turnOff);
             break;
           case 8:
             cfg.offTmr = ubuf[4];
             offTmr.setPrd(cfg.offTmr * 60000ul);
             if (cfg.turnOff) offTmr.restart();
+            DEBUG("\t off time minute:  ");
+            DEBUGLN(cfg.offTmr);
             break;
         }
         if (!cfg.power) strip->showLeds(0);
@@ -141,7 +164,7 @@ void parsing() {
         break;
 
       case 4:   // управление эффектами
-      DEBUGLN("EFFECT control");
+        DEBUGLN("EFFECT control");
         forceTmr.restart();
         EEeff.update();
         switch (ubuf[3]) {
@@ -152,15 +175,23 @@ void parsing() {
             answ[2] = effs[forceEff].scale;
             answ[3] = effs[forceEff].speed;
             reply(answ, 4);
+            DEBUG("\t select effect:  ");
+            DEBUGLN(forceEff);
             break;
           case 1:   // флажок избранное
             effs[forceEff].fav = ubuf[4];
+            DEBUG("\t add to favorites:  ");
+            DEBUGLN(effs[forceEff].fav);
             break;
           case 2:   // масштаб
             effs[forceEff].scale = ubuf[4];
+            DEBUG("\t scale:  ");
+            DEBUGLN(effs[forceEff].scale);
             break;
           case 3:   // скорость
             effs[forceEff].speed = ubuf[4];
+            DEBUG("\t speed:  ");
+            DEBUGLN(effs[forceEff].speed);
             break;
         }
         break;
